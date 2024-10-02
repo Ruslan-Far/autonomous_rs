@@ -15,13 +15,13 @@ ev3 = EV3Brick()
 left_motor = Motor(Port.A)
 right_motor = Motor(Port.D)
 
-length = 2000
-width = 1000
-angle = -90
-wheel_diameter = 54.5
-axle_track = 114.3
+LENGTH = 2000
+WIDTH = 1000
+ANGLE = -90
+WHEEL_DIAMETER = 54.5
+AXLE_TRACK = 114.3
 
-robot = DriveBase(left_motor, right_motor, wheel_diameter=wheel_diameter, axle_track=axle_track)
+robot = DriveBase(left_motor, right_motor, wheel_diameter=WHEEL_DIAMETER, axle_track=AXLE_TRACK)
 
 
 def drive_side(side, angle):
@@ -32,14 +32,11 @@ def drive_side(side, angle):
 
 
 def drive_rectangle():
-	global length
-	global width
-
 	i = 0
 
 	while i < 2:
-		drive_side(length, angle)
-		drive_side(width, angle)
+		drive_side(LENGTH, ANGLE)
+		drive_side(WIDTH, ANGLE)
 		i += 1
 
 
@@ -67,24 +64,23 @@ line_sensor = ColorSensor(Port.S1)
 
 BLACK = 9
 WHITE = 85
-threshold = (BLACK + WHITE) / 2
+REFLECTION_THRESHOLD = (BLACK + WHITE) / 2
 P = 1.2
 
-drive_speed = 50
+STRAIGHT_SPEED = 50
+TURN_RATE = 20
 action_timer = StopWatch()
 left_count = 0
 
+WHITE_THRESHOLD = 30
 
-def rotate(direction, delay):
-	global line_sensor
-	global threshold
-	global action_timer
 
-	robot.drive(0, direction * 20)
+def turn(direction, delay):
+	robot.drive(0, direction * TURN_RATE)
 	action_timer.reset()
 	while action_timer.time() < delay:
-		error = line_sensor.reflection() - threshold
-		if error <= -5:
+		error = line_sensor.reflection() - REFLECTION_THRESHOLD
+		if error <= -25: # поменял для того, чтобы робот смог выехать на левую сторону линии
 			return True
 		wait(10)
 	return False
@@ -93,26 +89,22 @@ def rotate(direction, delay):
 def search():
 	global left_count
 
-	# robot.stop()
-	# robot.settings(turn_rate=10)
-	# robot.turn(angle)
-
 	robot.stop()
 	if left_count >= 1:
-		is_found = rotate(-1, 6000)
+		is_found = turn(-1, 6000)
 		if is_found:
 			left_count += 1
 			return is_found
 		left_count = 0
-		is_found = rotate(1, 12000)
+		is_found = turn(1, 12000)
 		if is_found:
 			return is_found
 	else:
-		is_found = rotate(1, 6000)
+		is_found = turn(1, 6000)
 		if is_found:
 			left_count = 0
 			return is_found
-		is_found = rotate(-1, 12000)
+		is_found = turn(-1, 12000)
 		if is_found:
 			left_count += 1
 			return is_found
@@ -124,163 +116,23 @@ def run_task3():
 	is_found = True
 
 	while True:
-		error = line_sensor.reflection() - threshold
-		# print(line_sensor.reflection())
-		print(error)
-		if error > 30:
+		error = line_sensor.reflection() - REFLECTION_THRESHOLD
+		if error > WHITE_THRESHOLD:
 			if white_count == 10:
 				is_found = search()
 				robot.stop()
 				if not is_found:
 					return
 				white_count = 0
-				error = line_sensor.reflection() - threshold
-				print(error)
+				error = line_sensor.reflection() - REFLECTION_THRESHOLD
 			else:
 				white_count += 1
 		else:
 			white_count = 0
+		print(error)
 		turn_rate = P * error
-		robot.drive(drive_speed, turn_rate)
+		robot.drive(STRAIGHT_SPEED, turn_rate)
 		wait(10)
 
 
 run_task3()
-
-
-# ev3 = EV3Brick()
-# MOTOR_A = Motor(Port.A, Direction.COUNTERCLOCKWISE)
-# MOTOR_D = Motor(Port.D, Direction.COUNTERCLOCKWISE)
-# color_sensor = ColorSensor(Port.S3)
-
-# SPEED_A = 200
-
-# angle = 90
-
-
-# def run_motor(motor, speed, angle):
-# 	motor.run_target(speed, angle)
-# 	wait(100)
-
-
-# ev3.speaker.beep()
-# run_motor(MOTOR_A, SPEED_A, angle)
-# run_motor(MOTOR_D, SPEED_A, angle)
-
-
-
-# --------------------------------------------
-# Initialize the motors connected to the drive wheels.
-# left_motor = Motor(Port.A)
-# right_motor = Motor(Port.D)
-
-# Initialize the motor connected to the arms.
-# arm_motor = Motor(Port.C)
-
-# fall_timer = StopWatch()
-# single_loop_timer = StopWatch()
-# control_loop_timer = StopWatch()
-# action_timer = StopWatch()
-
-# wheel_diameter = 55
-# axle_track = 120
-# distance = 100
-
-# DriveBase(left_motor, right_motor, wheel_diameter, axle_track)
-# DriveBase(left_motor, right_motor, wheel_diameter)
-# drive_base = DriveBase(left_motor, right_motor, wheel_diameter=56, axle_track=112)
-
-# drive_base.straight(distance)
-
-# run_motor(left_motor, SPEED_A, angle)
-# run_motor(right_motor, SPEED_A, angle)
-
-
-
-
-
-
-
-
-
-
-# from pybricks.hubs import EV3Brick
-# from pybricks.ev3devices import Motor
-# from pybricks.parameters import Port
-# from pybricks.robotics import DriveBase
-
-# # Initialize the EV3 Brick.
-# ev3 = EV3Brick()
-
-# # Initialize the motors.
-# left_motor = Motor(Port.A)
-# right_motor = Motor(Port.D)
-
-# # Initialize the drive base.
-# robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=120)
-
-# # Go forward and backwards for one meter.
-# robot.straight(100)
-# ev3.speaker.beep()
-
-# robot.straight(-100)
-# ev3.speaker.beep()
-
-# # Turn clockwise by 360 degrees and back again.
-# robot.turn(360)
-# ev3.speaker.beep()
-
-# robot.turn(-360)
-# ev3.speaker.beep()
-
-
-
-
-
-# Initialize the motors.
-# left_motor = Motor(Port.A)
-# right_motor = Motor(Port.D)
-
-# Initialize the color sensor.
-# line_sensor = ColorSensor(Port.S1)
-
-# rgb = line_sensor.rgb()
-# print(rgb[0])
-# print(rgb[1])
-# print(rgb[2])
-
-# Initialize the drive base.
-# robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
-
-# Calculate the light threshold. Choose values based on your measurements.
-# BLACK = 9
-# WHITE = 85
-# threshold = (BLACK + WHITE) / 2
-
-# Set the drive speed at 100 millimeters per second.
-# DRIVE_SPEED = 100
-
-# Set the gain of the proportional line controller. This means that for every
-# percentage point of light deviating from the threshold, we set the turn
-# rate of the drivebase to 1.2 degrees per second.
-
-# For example, if the light value deviates from the threshold by 10, the robot
-# steers at 10*1.2 = 12 degrees per second.
-# PROPORTIONAL_GAIN = 1.2
-
-# deviation = line_sensor.reflection() - threshold
-# print(deviation)
-# # Start following the line endlessly.
-# while True:
-#     # Calculate the deviation from the threshold.
-	# deviation = line_sensor.reflection() - threshold
-	# print(deviation)
-
-#     # Calculate the turn rate.
-	# turn_rate = PROPORTIONAL_GAIN * deviation
-
-#     # Set the drive base speed and turn rate.
-	# robot.drive(DRIVE_SPEED, turn_rate)
-
-#     # You can wait for a short time or do other things in this loop.
-	# wait(10)
