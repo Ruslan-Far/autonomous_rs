@@ -73,6 +73,7 @@ P = 1.2
 drive_speed = 50
 action_timer = StopWatch()
 left_count = 0
+my_timer = StopWatch()
 
 
 def rotate(direction, delay):
@@ -98,35 +99,32 @@ def search():
 	# robot.turn(angle)
 
 	robot.stop()
-	if left_count >= 1:
-		is_found = rotate(-1, 6000)
-		if is_found:
-			left_count += 1
-			return is_found
-		left_count = 0
-		is_found = rotate(1, 12000)
-		if is_found:
-			return is_found
-	else:
-		is_found = rotate(1, 6000)
-		if is_found:
-			left_count = 0
-			return is_found
-		is_found = rotate(-1, 12000)
-		if is_found:
-			left_count += 1
-			return is_found
+	is_found = rotate(1, 33000)
+	if is_found:
+		return is_found
 	return False
 
 
 def run_task3():
 	white_count = 0
+	# cross_count = 0
 	is_found = True
 
+	my_timer.reset()
+	robot.settings(straight_speed=30, turn_rate=30)
 	while True:
 		error = line_sensor.reflection() - threshold
 		# print(line_sensor.reflection())
 		print(error)
+		if error < -37 and my_timer.time() > 3000:
+		# if error < -37:
+			robot.straight(20)
+			wait(100)
+			robot.turn(-70)
+			wait(100)
+			error = line_sensor.reflection() - threshold
+			print(error)
+			my_timer.reset()
 		if error > 30:
 			if white_count == 10:
 				is_found = search()
