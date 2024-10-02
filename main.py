@@ -43,7 +43,7 @@ def drive_rectangle():
 		i += 1
 
 
-def run():
+def run_task2():
 	i = 0
 
 	while i < 3:
@@ -51,7 +51,7 @@ def run():
 		i += 1
 
 
-run()
+# run_task2()
 # robot.turn(angle)
 # wait(100)
 # robot.turn(angle)
@@ -59,6 +59,93 @@ run()
 # robot.turn(angle)
 # wait(100)
 # robot.turn(angle)
+
+
+# -------------------------------- TASK 3
+
+line_sensor = ColorSensor(Port.S1)
+
+BLACK = 9
+WHITE = 85
+threshold = (BLACK + WHITE) / 2
+P = 1.2
+
+drive_speed = 50
+action_timer = StopWatch()
+left_count = 0
+
+
+def rotate(direction, delay):
+	global line_sensor
+	global threshold
+	global action_timer
+
+	robot.drive(0, direction * 20)
+	action_timer.reset()
+	while action_timer.time() < delay:
+		error = line_sensor.reflection() - threshold
+		if error <= -5:
+			return True
+		wait(10)
+	return False
+
+
+def search():
+	global left_count
+
+	# robot.stop()
+	# robot.settings(turn_rate=10)
+	# robot.turn(angle)
+
+	robot.stop()
+	if left_count >= 1:
+		is_found = rotate(-1, 6000)
+		if is_found:
+			left_count += 1
+			return is_found
+		left_count = 0
+		is_found = rotate(1, 12000)
+		if is_found:
+			return is_found
+	else:
+		is_found = rotate(1, 6000)
+		if is_found:
+			left_count = 0
+			return is_found
+		is_found = rotate(-1, 12000)
+		if is_found:
+			left_count += 1
+			return is_found
+	return False
+
+
+def run_task3():
+	white_count = 0
+	is_found = True
+
+	while True:
+		error = line_sensor.reflection() - threshold
+		# print(line_sensor.reflection())
+		print(error)
+		if error > 30:
+			if white_count == 10:
+				is_found = search()
+				robot.stop()
+				if not is_found:
+					return
+				white_count = 0
+				error = line_sensor.reflection() - threshold
+				print(error)
+			else:
+				white_count += 1
+		else:
+			white_count = 0
+		turn_rate = P * error
+		robot.drive(drive_speed, turn_rate)
+		wait(10)
+
+
+run_task3()
 
 
 # ev3 = EV3Brick()
