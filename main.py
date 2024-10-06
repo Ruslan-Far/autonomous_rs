@@ -136,3 +136,45 @@ def run_task3():
 
 
 run_task3()
+
+
+# -------------------------------- TASK 4
+
+ultrasonic_sensor = UltrasonicSensor(Port.S4)
+
+obstacle = 200
+speed = 50
+obstacle_start = 2000
+
+print(ultrasonic_sensor.distance()) 
+
+
+def start():
+    while True:
+        if ultrasonic_sensor.distance() > obstacle_start:
+            ev3.speaker.beep()
+            move_ultrasonic_sensor()      
+            break
+
+
+def move_ultrasonic_sensor():
+    action_timer.reset()
+    while action_timer.time() < 120000:
+        if ultrasonic_sensor.distance() < obstacle:
+            while ultrasonic_sensor.distance() < obstacle:                
+                robot.drive(-speed, 0)
+            print("after 200") 
+            robot.stop()
+        elif ultrasonic_sensor.distance() > obstacle:
+            while ultrasonic_sensor.distance() > obstacle:
+                robot.drive(speed, 0)
+            print("before 200") 
+            robot.stop()
+        else:
+            print("200") 
+            robot.stop()
+    ev3.speaker.beep()
+    print("Finish") 
+
+
+start()
