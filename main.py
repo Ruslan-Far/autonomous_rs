@@ -8,8 +8,6 @@ from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
 
-# ------------------------------------------------------- WHILE DOING HW3
-
 ev3 = EV3Brick()
 
 left_motor = Motor(Port.A)
