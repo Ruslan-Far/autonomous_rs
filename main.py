@@ -11,7 +11,6 @@ import _thread
 import time
 
 # ------------------------------------------------------- WHILE DOING HW4
-# в будущем внести некоторые правки (которые указаны здесь) и в другие ветки
 
 ev3 = EV3Brick()
 
@@ -24,7 +23,7 @@ AXLE_TRACK = 114.3
 
 robot = DriveBase(left_motor, right_motor, wheel_diameter=WHEEL_DIAMETER, axle_track=AXLE_TRACK)
 
-line_sensor = ColorSensor(Port.S1)
+color_sensor = ColorSensor(Port.S1)
 ultrasonic_sensor = UltrasonicSensor(Port.S4)
 
 BLACK = 9
@@ -58,14 +57,13 @@ def turn(direction, delay):
 	robot.drive(0, direction * TURN_RATE)
 	action_timer.reset()
 	while action_timer.time() < delay:
-		error = line_sensor.reflection() - REFLECTION_THRESHOLD
+		error = color_sensor.reflection() - REFLECTION_THRESHOLD
 		if direction == -1:
-			if error >= 0: # вместо -5. 0 - это левый край черной линии
+			if error >= 0: # 0 - это левый край черной линии
 				return True
 		else:
-			if error <= 0: # вместо -5
+			if error <= 0: # 0 - это левый край черной линии
 				return True
-		# убрал wait(10)
 	return False
 
 
@@ -85,15 +83,15 @@ def drive_to_wall():
 		if ultrasonic_sensor.distance() <= START_OBSTACLE_THRESHOLD:
 			robot.stop()
 			break
-		error = line_sensor.reflection() - REFLECTION_THRESHOLD
+		error = color_sensor.reflection() - REFLECTION_THRESHOLD
 		if error < CROSSROAD_THRESHOLD:
 			search(True)
-			error = line_sensor.reflection() - REFLECTION_THRESHOLD
+			error = color_sensor.reflection() - REFLECTION_THRESHOLD
 		if error > WHITE_THRESHOLD:
 			if white_count == 10:
 				search(False)
 				white_count = 0
-				error = line_sensor.reflection() - REFLECTION_THRESHOLD
+				error = color_sensor.reflection() - REFLECTION_THRESHOLD
 			else:
 				white_count += 1
 		else:
@@ -103,7 +101,6 @@ def drive_to_wall():
 		print("end_drive_to_wall_error")
 		turn_rate = P * error
 		robot.drive(STRAIGHT_SPEED, turn_rate)
-		# убрал wait(10)
 
 
 def rotate_ultrasonic_sensor():
@@ -122,7 +119,7 @@ def check_black_line():
 	global is_stop
 
 	black_line_timer.reset()
-	while not (line_sensor.reflection() - REFLECTION_THRESHOLD < CROSSROAD_THRESHOLD and black_line_timer.time() > 100000):
+	while not (color_sensor.reflection() - REFLECTION_THRESHOLD < CROSSROAD_THRESHOLD and black_line_timer.time() > 100000):
 		pass
 	is_stop = True
 	robot.stop()
@@ -179,5 +176,5 @@ print("Потоки завершены")
 # 	wait(1000)
 
 # while True:
-# 	print(line_sensor.reflection() - REFLECTION_THRESHOLD)
+# 	print(color_sensor.reflection() - REFLECTION_THRESHOLD)
 # 	wait(1000)
