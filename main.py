@@ -60,7 +60,7 @@ def run_task2():
 
 # -------------------------------- TASK 3
 
-line_sensor = ColorSensor(Port.S1)
+color_sensor = ColorSensor(Port.S1)
 
 BLACK = 9
 WHITE = 85
@@ -79,10 +79,9 @@ def turn(direction, delay):
 	robot.drive(0, direction * TURN_RATE)
 	action_timer.reset()
 	while action_timer.time() < delay:
-		error = line_sensor.reflection() - REFLECTION_THRESHOLD
-		if error <= -25: # поменял для того, чтобы робот смог выехать на левую сторону линии
+		error = color_sensor.reflection() - REFLECTION_THRESHOLD
+		if error <= -25: # чтобы робот смог выехать на левый край черной линии
 			return True
-		wait(10)
 	return False
 
 
@@ -116,7 +115,7 @@ def run_task3():
 	is_found = True
 
 	while True:
-		error = line_sensor.reflection() - REFLECTION_THRESHOLD
+		error = color_sensor.reflection() - REFLECTION_THRESHOLD
 		if error > WHITE_THRESHOLD:
 			if white_count == 10:
 				is_found = search()
@@ -124,7 +123,7 @@ def run_task3():
 				if not is_found:
 					return
 				white_count = 0
-				error = line_sensor.reflection() - REFLECTION_THRESHOLD
+				error = color_sensor.reflection() - REFLECTION_THRESHOLD
 			else:
 				white_count += 1
 		else:
@@ -132,7 +131,6 @@ def run_task3():
 		print(error)
 		turn_rate = P * error
 		robot.drive(STRAIGHT_SPEED, turn_rate)
-		wait(10)
 
 
 run_task3()
@@ -142,32 +140,21 @@ run_task3()
 
 ultrasonic_sensor = UltrasonicSensor(Port.S4)
 
-obstacle = 200
-speed = 50
-obstacle_start = 2000
-
-print(ultrasonic_sensor.distance()) 
-
-
-def start():
-    while True:
-        if ultrasonic_sensor.distance() > obstacle_start:
-            ev3.speaker.beep()
-            move_ultrasonic_sensor()      
-            break
+START_OBSTACLE_THRESHOLD = 2000
+OBSTACLE_THRESHOLD = 200
 
 
 def move_ultrasonic_sensor():
     action_timer.reset()
     while action_timer.time() < 120000:
-        if ultrasonic_sensor.distance() < obstacle:
-            while ultrasonic_sensor.distance() < obstacle:                
-                robot.drive(-speed, 0)
+        if ultrasonic_sensor.distance() < OBSTACLE_THRESHOLD:
+            while ultrasonic_sensor.distance() < OBSTACLE_THRESHOLD:                
+                robot.drive(-STRAIGHT_SPEED, 0)
             print("after 200") 
             robot.stop()
-        elif ultrasonic_sensor.distance() > obstacle:
-            while ultrasonic_sensor.distance() > obstacle:
-                robot.drive(speed, 0)
+        elif ultrasonic_sensor.distance() > OBSTACLE_THRESHOLD:
+            while ultrasonic_sensor.distance() > OBSTACLE_THRESHOLD:
+                robot.drive(STRAIGHT_SPEED, 0)
             print("before 200") 
             robot.stop()
         else:
@@ -177,4 +164,13 @@ def move_ultrasonic_sensor():
     print("Finish") 
 
 
-start()
+def run_task4():
+    while True:
+        if ultrasonic_sensor.distance() > START_OBSTACLE_THRESHOLD:
+            ev3.speaker.beep()
+            move_ultrasonic_sensor()      
+            break
+
+
+print(ultrasonic_sensor.distance()) 
+run_task4()
