@@ -18,7 +18,7 @@ AXLE_TRACK = 114.3
 
 robot = DriveBase(left_motor, right_motor, wheel_diameter=WHEEL_DIAMETER, axle_track=AXLE_TRACK)
 
-line_sensor = ColorSensor(Port.S1)
+color_sensor = ColorSensor(Port.S1)
 
 BLACK = 9
 WHITE = 85
@@ -37,14 +37,13 @@ def turn(direction, delay):
 	robot.drive(0, direction * TURN_RATE)
 	action_timer.reset()
 	while action_timer.time() < delay:
-		error = line_sensor.reflection() - REFLECTION_THRESHOLD
+		error = color_sensor.reflection() - REFLECTION_THRESHOLD
 		if direction == -1:
-			if error >= -5:
+			if error >= 0: # 0 - это левый край черной линии
 				return True
 		else:
-			if error <= -5:
+			if error <= 0: # 0 - это левый край черной линии
 				return True
-		wait(10)
 	return False
 
 
@@ -61,15 +60,15 @@ def run():
 	white_count = 0
 
 	while True:
-		error = line_sensor.reflection() - REFLECTION_THRESHOLD
+		error = color_sensor.reflection() - REFLECTION_THRESHOLD
 		if error < CROSSROAD_THRESHOLD:
 			search(True)
-			error = line_sensor.reflection() - REFLECTION_THRESHOLD
+			error = color_sensor.reflection() - REFLECTION_THRESHOLD
 		if error > WHITE_THRESHOLD:
 			if white_count == 10:
 				search(False)
 				white_count = 0
-				error = line_sensor.reflection() - REFLECTION_THRESHOLD
+				error = color_sensor.reflection() - REFLECTION_THRESHOLD
 			else:
 				white_count += 1
 		else:
@@ -77,7 +76,6 @@ def run():
 		print(error)
 		turn_rate = P * error
 		robot.drive(STRAIGHT_SPEED, turn_rate)
-		wait(10)
 
 
 run()
