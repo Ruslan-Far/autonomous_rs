@@ -11,6 +11,7 @@ import _thread
 import time
 
 # ------------------------------------------------------- WHILE DOING HW4
+# в будущем внести некоторые правки (которые указаны здесь) и в другие ветки
 
 ev3 = EV3Brick()
 
@@ -37,13 +38,16 @@ TURN_RATE = 20
 ULTRASONIC_TURN_RATE = 800
 
 action_timer = StopWatch()
+black_line_timer = StopWatch()
 
 CROSSROAD_THRESHOLD = -20
 WHITE_THRESHOLD = 30
+START_OBSTACLE_THRESHOLD = 200
 # OBSTACLE_THRESHOLD = 133
 OBSTACLE_THRESHOLD = 143
-
-OBSTACLE_START = 200
+FORWARD_OBSTACLE_THRESHOLD = 200
+CORNER_ERROR_THRESHOLD = 800
+ERROR_THRESHOLD = 100
 
 ANGLE = 90
 
@@ -56,12 +60,12 @@ def turn(direction, delay):
 	while action_timer.time() < delay:
 		error = line_sensor.reflection() - REFLECTION_THRESHOLD
 		if direction == -1:
-			if error >= -5:
+			if error >= 0: # вместо -5. 0 - это левый край черной линии
 				return True
 		else:
-			if error <= -5:
+			if error <= 0: # вместо -5
 				return True
-		wait(10)
+		# убрал wait(10)
 	return False
 
 
@@ -78,7 +82,7 @@ def drive_to_wall():
 	white_count = 0
 
 	while True:
-		if ultrasonic_sensor.distance() <= OBSTACLE_START:
+		if ultrasonic_sensor.distance() <= START_OBSTACLE_THRESHOLD:
 			robot.stop()
 			break
 		error = line_sensor.reflection() - REFLECTION_THRESHOLD
@@ -94,21 +98,21 @@ def drive_to_wall():
 				white_count += 1
 		else:
 			white_count = 0
-		print("drive_to_wall")
+		print("drive_to_wall_error")
 		print(error)
-		print("end_drive_to_wall")
+		print("end_drive_to_wall_error")
 		turn_rate = P * error
 		robot.drive(STRAIGHT_SPEED, turn_rate)
-		wait(10)
+		# убрал wait(10)
 
 
 def rotate_ultrasonic_sensor():
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, ANGLE)
 	dist = ultrasonic_sensor.distance()
-	print("dist")
+	print("forward_dist")
 	print(dist)
-	print("end_dist")
-	if dist <= 200:
+	print("end_forward_dist")
+	if dist <= FORWARD_OBSTACLE_THRESHOLD:
 		robot.stop()
 		robot.turn(ANGLE / 2)
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, 0)
@@ -117,39 +121,13 @@ def rotate_ultrasonic_sensor():
 def check_black_line():
 	global is_stop
 
-	print("{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}")
-	# while not (line_sensor.reflection() - REFLECTION_THRESHOLD < CROSSROAD_THRESHOLD and action_timer.time() > 10000):
-	while not (line_sensor.reflection() - REFLECTION_THRESHOLD < CROSSROAD_THRESHOLD and action_timer.time() > 100000):
+	black_line_timer.reset()
+	while not (line_sensor.reflection() - REFLECTION_THRESHOLD < CROSSROAD_THRESHOLD and black_line_timer.time() > 100000):
 		pass
-	print("STOP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	is_stop = True
 	robot.stop()
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, 0)
 	ev3.speaker.beep()
-	return True
-	# return False
-
-
-# def rotate_ultrasonic_sensor():
-# 	i = 0
-# 	while i < ANGLE:
-# 		i += 5
-# 		ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, i)
-# 		if check_black_line():
-# 			return True
-# 	dist = ultrasonic_sensor.distance()
-# 	print("dist")
-# 	print(dist)
-# 	print("end_dist")
-# 	if dist <= 200:
-# 		robot.stop()
-# 		robot.turn(ANGLE / 2)
-# 	while i > 0:
-# 		i -= 5
-# 		ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, i)
-# 		if check_black_line():
-# 			return True
-# 	return False
 
 
 def run():
@@ -160,19 +138,17 @@ def run():
 	robot.turn(ANGLE)
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, -ANGLE)
 	ultrasonic_motor.reset_angle(0)
-	# action_timer.reset()
 	while True:
 		if is_stop:
 			robot.stop()
-			print("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
 			return
 		error = ultrasonic_sensor.distance() - OBSTACLE_THRESHOLD
-		if error > 800:
+		if error > CORNER_ERROR_THRESHOLD:
 			error = 50
-		elif error > 100:
-			error = 100
-		elif error < -100:
-			error = -100
+		elif error > ERROR_THRESHOLD:
+			error = ERROR_THRESHOLD
+		elif error < -ERROR_THRESHOLD:
+			error = -ERROR_THRESHOLD
 		print("error")
 		print(error)
 		print("end_error")
@@ -181,18 +157,11 @@ def run():
 		rotate_ultrasonic_sensor()
 
 
-# ultrasonic_motor.run_target(TURN_RATE, ANGLE / 2)
-# ultrasonic_motor.run_target(TURN_RATE, 2 * ANGLE)
-# ultrasonic_motor.run_target(TURN_RATE, -ANGLE / 2)
-# ultrasonic_motor.run_target(TURN_RATE, -ANGLE)
-# ultrasonic_motor.run_target(TURN_RATE, 15)
+# ultrasonic_motor.run_target(TURN_RATE, 15) # по часовой стрелке
+# ultrasonic_motor.run_target(TURN_RATE, -15) # против часовой стрелки
 
-# run()
-
-action_timer.reset()
 _thread.start_new_thread(run, ())
 _thread.start_new_thread(check_black_line, ())
-# time.sleep(1000000000)
 while not is_stop:
     pass
 time.sleep(1)
