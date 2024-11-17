@@ -52,7 +52,8 @@ def turn(direction, delay, is_after_2):
 
 def search(is_crossroad):
 	robot.stop()
-	if is_crossroad:
+	if is_crossroad: # Для HW4 можно сделать модуль при подсчете turn_rate для таких сложный ситуаций, как углы
+		# Можно на время уменьшить STRAIGHT_SPEED (представить в виде списка с несколькими значениями скоростей)
 		# turn(-1, 6000, False)
 		turn(-1, 2000, False)
 		# robot.stop()
