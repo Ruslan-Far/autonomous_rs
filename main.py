@@ -17,12 +17,16 @@ right_motor = Motor(Port.D)
 
 LENGTH = 2000
 WIDTH = 1000
-ANGLE = -90
+ANGLE = -105
 WHEEL_DIAMETER = 54.5
-AXLE_TRACK = 114.3
+# AXLE_TRACK = 114.3
+AXLE_TRACK = 105.75
+STRAIGHT_SPEED = 100
+TURN_RATE = 0.995
 
 robot = DriveBase(left_motor, right_motor, wheel_diameter=WHEEL_DIAMETER, axle_track=AXLE_TRACK)
-
+action_timer = StopWatch()
+main_action_timer = StopWatch()
 
 def drive_side(side, angle):
 	robot.straight(side)
@@ -40,22 +44,67 @@ def drive_rectangle():
 		i += 1
 
 
+def drive_straight(main_delay):
+	main_action_timer.reset()
+	while main_action_timer.time() < main_delay:
+		robot.reset()
+		action_timer.reset()
+		print("1")
+		while action_timer.time() < 2000:
+			if main_action_timer.time() >= main_delay:
+				robot.stop()
+				robot.reset()
+				return
+			# robot.drive(STRAIGHT_SPEED, 0.2) # good
+			robot.drive(STRAIGHT_SPEED, 0.1) # good
+		robot.reset()
+		action_timer.reset()
+		print("0")
+		while action_timer.time() < 2000:
+			if main_action_timer.time() >= main_delay:
+				robot.stop()
+				robot.reset()
+				return
+			robot.drive(STRAIGHT_SPEED, 1)
+	robot.stop()
+	robot.reset()
+	
+
+def drive_turn(action_delay):
+	robot.reset()
+	action_timer.reset()
+	print("turn")
+	while action_timer.time() < action_delay:
+		# robot.drive(0, -50)
+		robot.drive(0, -30)
+	robot.stop()
+	robot.reset()
+
+
 def run_task2():
 	i = 0
 
-	while i < 3:
-		drive_rectangle()
+	# while i < 3:
+	# 	drive_rectangle()
+	# 	i += 1
+	while i < 2:
+		drive_straight(20000) # 2m
+		wait(2000)
+		# robot.turn(ANGLE)
+		drive_turn(3400) # 90d
+		wait(2000)
+		drive_straight(10000) # 1m
+		wait(2000)
+		# robot.turn(ANGLE)
+		drive_turn(3400) # 90d
+		wait(2000)
 		i += 1
 
 
 # run_task2()
-# robot.turn(angle)
-# wait(100)
-# robot.turn(angle)
-# wait(100)
-# robot.turn(angle)
-# wait(100)
-# robot.turn(angle)
+# robot.turn(ANGLE)
+# drive_turn(2050)
+# drive_turn(3400)
 
 
 # -------------------------------- TASK 3
@@ -142,35 +191,52 @@ ultrasonic_sensor = UltrasonicSensor(Port.S4)
 
 START_OBSTACLE_THRESHOLD = 2000
 OBSTACLE_THRESHOLD = 200
-
+P = 0.5
 
 def move_ultrasonic_sensor():
-    action_timer.reset()
-    while action_timer.time() < 120000:
-        if ultrasonic_sensor.distance() < OBSTACLE_THRESHOLD:
-            while ultrasonic_sensor.distance() < OBSTACLE_THRESHOLD:                
-                robot.drive(-STRAIGHT_SPEED, 0)
-            print("after 200") 
-            robot.stop()
-        elif ultrasonic_sensor.distance() > OBSTACLE_THRESHOLD:
-            while ultrasonic_sensor.distance() > OBSTACLE_THRESHOLD:
-                robot.drive(STRAIGHT_SPEED, 0)
-            print("before 200") 
-            robot.stop()
-        else:
-            print("200") 
-            robot.stop()
-    ev3.speaker.beep()
-    print("Finish") 
+	action_timer.reset()
+	while action_timer.time() < 120000:
+		distance = ultrasonic_sensor.distance()
+		if distance < OBSTACLE_THRESHOLD:
+			print("in range of 200")
+			while distance < OBSTACLE_THRESHOLD:                
+				# robot.drive(-STRAIGHT_SPEED, 0)
+				error = distance - OBSTACLE_THRESHOLD
+				if error < -300:
+					error = -300
+				if error < 3 and error > -3:
+					error = 0
+				error *= 2 # чтобы назад ехал побыстрее
+				robot.drive(P * error, 0)
+				print(P * error)
+				distance = ultrasonic_sensor.distance()
+			robot.stop()
+		elif distance > OBSTACLE_THRESHOLD:
+			print("out range of 200")
+			while distance > OBSTACLE_THRESHOLD:
+				# robot.drive(STRAIGHT_SPEED, 0)
+				error = distance - OBSTACLE_THRESHOLD
+				if error > 300:
+					error = 300
+				if error < 3 and error > -3:
+					error = 0
+				robot.drive(P * error, 0)
+				print(P * error)
+				distance = ultrasonic_sensor.distance()
+			robot.stop()
+		else:
+			print("200") 
+			robot.stop()
+	ev3.speaker.beep()
+	print("Finish") 
 
 
 def run_task4():
-    while True:
-        if ultrasonic_sensor.distance() > START_OBSTACLE_THRESHOLD:
-            ev3.speaker.beep()
-            move_ultrasonic_sensor()      
-            break
+	while True:
+		if ultrasonic_sensor.distance() > START_OBSTACLE_THRESHOLD:
+			ev3.speaker.beep()
+			move_ultrasonic_sensor()      
+			break
 
 
-print(ultrasonic_sensor.distance()) 
-run_task4()
+# run_task4()
