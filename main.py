@@ -21,9 +21,9 @@ robot = DriveBase(left_motor, right_motor, wheel_diameter=WHEEL_DIAMETER, axle_t
 color_sensor = ColorSensor(Port.S1)
 
 REFLECTION_THRESHOLD = 52
-P = 1
+P = 0.9
 
-STRAIGHT_SPEED = 50
+STRAIGHT_SPEED = 50 * 1.3
 TURN_RATE = 20
 action_timer = StopWatch()
 
@@ -31,11 +31,13 @@ CROSSROAD_THRESHOLD = -20
 WHITE_THRESHOLD = 70
 
 
-def turn(direction, delay, is_after_2):
-	if is_after_2:
-		robot.drive(STRAIGHT_SPEED, direction * TURN_RATE)
-	else:
-		robot.drive(0, direction * TURN_RATE)
+def turn(direction, delay):
+	# if delay == 2000:
+	# 	turn_rate = TURN_RATE
+	# else:
+	# 	turn_rate = 2 * TURN_RATE
+	# robot.drive(0, direction * turn_rate)
+	robot.drive(0, direction * TURN_RATE)
 	action_timer.reset()
 	while action_timer.time() < delay:
 		rgb = color_sensor.rgb()
@@ -55,11 +57,11 @@ def search(is_crossroad):
 	if is_crossroad: # Для HW4 можно сделать модуль при подсчете turn_rate для таких сложный ситуаций, как углы
 		# Можно на время уменьшить STRAIGHT_SPEED (представить в виде списка с несколькими значениями скоростей)
 		# turn(-1, 6000, False)
-		turn(-1, 2000, False)
+		turn(-1, 2000)
 		# robot.stop()
 		# turn(-1, 6000, True)
 	else:
-		turn(1, 33000, False)
+		turn(1, 33000)
 	robot.stop()
 
 
@@ -87,15 +89,6 @@ def run():
 			error = 25
 		turn_rate = P * error
 		robot.drive(STRAIGHT_SPEED, turn_rate)
-		# wait(100)
 
 
 run()
-
-
-
-# HSV
-# floor: [252, 42, 60]
-
-# RGB
-# floor: [45, 40, 68]
