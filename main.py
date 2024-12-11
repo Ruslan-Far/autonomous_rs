@@ -20,75 +20,78 @@ robot = DriveBase(left_motor, right_motor, wheel_diameter=WHEEL_DIAMETER, axle_t
 
 color_sensor = ColorSensor(Port.S1)
 
-REFLECTION_THRESHOLD = 52
-P = 0.9
-
-STRAIGHT_SPEED = 50 * 1.3
-TURN_RATE = 20
 action_timer = StopWatch()
 
-CROSSROAD_THRESHOLD = -20
-WHITE_THRESHOLD = 70
+P = 0.9
+
+STRAIGHT_SPEED_BASE = 50 * 2.3
+STRAIGHT_SPEED_CROSSROAD = 0
+STRAIGHT_SPEED_WHITE_YELLOW = 0
+
+TURN_RATE_CROSSROAD = 25
+TURN_RATE_WHITE_YELLOW = 80
+
+RGB_SUM_THRESHOLD = 52
+CROSSROAD_THRESHOLD = -15
+WHITE_YELLOW_THRESHOLD = 70
+WHITE_YELLOW_COUNT_THRESHOLD = 50
+UPPER_ERROR_THRESHOLD = 25 # ограничивает положительную ошибку при выезде с линии (для адекватной скорости поворота)
 
 
 def turn(direction, delay):
-	# if delay == 2000:
-	# 	turn_rate = TURN_RATE
-	# else:
-	# 	turn_rate = 2 * TURN_RATE
-	# robot.drive(0, direction * turn_rate)
-	robot.drive(0, direction * TURN_RATE)
+	if delay == 2000: # is_crossroad
+		robot.drive(STRAIGHT_SPEED_CROSSROAD, direction * TURN_RATE_CROSSROAD)
+	else: # is_white_yellow
+		robot.drive(STRAIGHT_SPEED_WHITE_YELLOW, direction * TURN_RATE_WHITE_YELLOW)
 	action_timer.reset()
 	while action_timer.time() < delay:
 		rgb = color_sensor.rgb()
 		rgb_sum = rgb[0] + rgb[1] + rgb[2]
-		error = rgb_sum - REFLECTION_THRESHOLD
+		error = rgb_sum - RGB_SUM_THRESHOLD
 		if direction == -1:
-			if error >= 0: # 0 - это левый край черной линии
+			if error >= 10: # 10 - это небольшое расстояние от левого края черной линии (подъезжаем справа)
 				return True
 		else:
-			if error <= 0: # 0 - это левый край черной линии
+			if error <= 0: # 0 - это левый край черной линии (подъезжаем слева)
 				return True
 	return False
 
 
 def search(is_crossroad):
 	robot.stop()
-	if is_crossroad: # Для HW4 можно сделать модуль при подсчете turn_rate для таких сложный ситуаций, как углы
-		# Можно на время уменьшить STRAIGHT_SPEED (представить в виде списка с несколькими значениями скоростей)
-		# turn(-1, 6000, False)
+	if is_crossroad:
+		print("is_crossroad")
 		turn(-1, 2000)
-		# robot.stop()
-		# turn(-1, 6000, True)
 	else:
+		print("is_white_yellow")
 		turn(1, 33000)
 	robot.stop()
 
 
 def run():
-	white_count = 0
+	white_yellow_count = 0
 
 	while True:
 		rgb = color_sensor.rgb()
 		rgb_sum = rgb[0] + rgb[1] + rgb[2]
-		error = rgb_sum - REFLECTION_THRESHOLD
+		error = rgb_sum - RGB_SUM_THRESHOLD
 		if error < CROSSROAD_THRESHOLD:
 			search(True)
-			error = rgb_sum - REFLECTION_THRESHOLD
-		if error > WHITE_THRESHOLD:
-			if white_count == 10:
+			error = rgb_sum - RGB_SUM_THRESHOLD
+		if error > WHITE_YELLOW_THRESHOLD:
+			if white_yellow_count == WHITE_YELLOW_COUNT_THRESHOLD:
 				search(False)
-				white_count = 0
-				error = rgb_sum - REFLECTION_THRESHOLD
+				white_yellow_count = 0
+				error = rgb_sum - RGB_SUM_THRESHOLD
 			else:
-				white_count += 1
+				white_yellow_count += 1
 		else:
-			white_count = 0
+			white_yellow_count = 0
 		print(error)
-		if error > 25:
-			error = 25
+		if error > UPPER_ERROR_THRESHOLD:
+			error = UPPER_ERROR_THRESHOLD
 		turn_rate = P * error
-		robot.drive(STRAIGHT_SPEED, turn_rate)
+		robot.drive(STRAIGHT_SPEED_BASE, turn_rate)
 
 
 run()
