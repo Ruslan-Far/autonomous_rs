@@ -47,10 +47,13 @@ CROSSROAD_THRESHOLD = -2
 WHITE_THRESHOLD = 5
 START_OBSTACLE_THRESHOLD = 200
 # OBSTACLE_THRESHOLD = 133
-OBSTACLE_THRESHOLD = 143
+# OBSTACLE_THRESHOLD = 143
+OBSTACLE_THRESHOLD = 200
 FORWARD_OBSTACLE_THRESHOLD = 200
-CORNER_ERROR_THRESHOLD = 800
-ERROR_THRESHOLD = 100
+# CORNER_ERROR_THRESHOLD = 800
+CORNER_ERROR_THRESHOLD = 600
+# ERROR_THRESHOLD = 100
+ERROR_THRESHOLD = 70
 
 # ANGLE = 90
 ANGLE = 100
@@ -111,13 +114,29 @@ def drive_to_wall():
 def rotate_ultrasonic_sensor():
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, ANGLE)
 	dist = ultrasonic_sensor.distance()
-	print("forward_dist")
+	# print("forward_dist")
 	print(dist)
-	print("end_forward_dist")
+	# print("end_forward_dist")
 	if dist <= FORWARD_OBSTACLE_THRESHOLD:
 		# Здесь можно будет менять на время коэффициент P, например, в большую сторону на 2 сек
-		robot.stop()
-		robot.turn(ANGLE / 2)
+		# robot.stop()
+
+
+		# error = dist - FORWARD_OBSTACLE_THRESHOLD
+		# robot.turn(ANGLE / 2)
+		# local_P = P / 10
+		# robot.turn(P * error)
+		# robot.turn(ANGLE / 2 - dist / 4)
+		# turn_rate = 7000 / dist
+		# turn_rate = 10000 / dist
+		# if turn_rate >= ANGLE * 5:
+		# 	turn_rate = ANGLE * 5
+		# robot.turn(turn_rate)
+		local_timer = StopWatch()
+		local_timer.reset()
+		while (local_timer.time() < 300):
+		# while (local_timer.time() < 6000 / dist):
+			robot.drive(STRAIGHT_SPEED / 1.5, TURN_RATE * 3)
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, 0)
 
 
@@ -133,11 +152,9 @@ def check_black_line():
 def run():
 	global is_stop
 
-	# error_bias = 0
-
 	ev3.speaker.beep()
 	drive_to_wall()
-	robot.turn(ANGLE)
+	robot.turn(ANGLE - 20)
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, -ANGLE)
 	ultrasonic_motor.reset_angle(0)
 	while True:
@@ -148,24 +165,17 @@ def run():
 		# Думаю, что это не нужно (что закомментировано). Для таких целей и существует PID регулятор. Просто необходимо грамотно и
 		# на основании многочисленных результатов измерений подобрать данные коэффициенты: P, I, D.
 
-		# if dist >= 500:
-		# 	error_bias = 10
-		# elif dist >= 200 and dist < 300:
-		# 	error_bias = -dist / 20
-		# else:
-		# 	error_bias = 0
 		error = dist - OBSTACLE_THRESHOLD
 		if error > CORNER_ERROR_THRESHOLD: # Возможно в будущем поменять в меньшую сторону CORNER_ERROR_THRESHOLD
-			error = 50 # Также здесь можно поиграться со значениями. Либо менять только коэффициент P на какое-то время
+			error = ERROR_THRESHOLD # Также здесь можно поиграться со значениями. Либо менять только коэффициент P на какое-то время
 		elif error > ERROR_THRESHOLD:
 			error = ERROR_THRESHOLD
 		elif error < -ERROR_THRESHOLD:
 			error = -ERROR_THRESHOLD
-		print("error")
-		print(error)
-		print("end_error")
+		# print("error")
+		# print(error)
+		# print("end_error")
 		turn_rate = P * error
-		# turn_rate = P * error + error_bias
 		robot.drive(STRAIGHT_SPEED, -turn_rate)
 		rotate_ultrasonic_sensor()
 
