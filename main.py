@@ -10,7 +10,7 @@ from pybricks.media.ev3dev import SoundFile, ImageFile
 import _thread
 import time
 
-# ------------------------------------------------------- WHILE DOING HW4
+# ------------------------------------------------------- HW4
 
 ev3 = EV3Brick()
 
@@ -26,13 +26,10 @@ robot = DriveBase(left_motor, right_motor, wheel_diameter=WHEEL_DIAMETER, axle_t
 color_sensor = ColorSensor(Port.S1)
 ultrasonic_sensor = UltrasonicSensor(Port.S4)
 
-# BLACK = 9
 BLACK = 7
-# WHITE = 85
 WHITE = 23
 REFLECTION_THRESHOLD = (BLACK + WHITE) / 2
-# P = 1.2
-P = 0.175
+P = 0.19
 
 STRAIGHT_SPEED = 50
 TURN_RATE = 20
@@ -41,21 +38,14 @@ ULTRASONIC_TURN_RATE = 800
 action_timer = StopWatch()
 black_line_timer = StopWatch()
 
-# CROSSROAD_THRESHOLD = -20
 CROSSROAD_THRESHOLD = -2
-# WHITE_THRESHOLD = 30
 WHITE_THRESHOLD = 5
 START_OBSTACLE_THRESHOLD = 200
-# OBSTACLE_THRESHOLD = 133
-# OBSTACLE_THRESHOLD = 143
 OBSTACLE_THRESHOLD = 200
-FORWARD_OBSTACLE_THRESHOLD = 200
-# CORNER_ERROR_THRESHOLD = 800
+FORWARD_OBSTACLE_THRESHOLD = 300
 CORNER_ERROR_THRESHOLD = 600
-# ERROR_THRESHOLD = 100
 ERROR_THRESHOLD = 70
 
-# ANGLE = 90
 ANGLE = 100
 
 is_stop = False
@@ -114,29 +104,11 @@ def drive_to_wall():
 def rotate_ultrasonic_sensor():
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, ANGLE)
 	dist = ultrasonic_sensor.distance()
-	# print("forward_dist")
-	print(dist)
-	# print("end_forward_dist")
 	if dist <= FORWARD_OBSTACLE_THRESHOLD:
-		# Здесь можно будет менять на время коэффициент P, например, в большую сторону на 2 сек
-		# robot.stop()
-
-
-		# error = dist - FORWARD_OBSTACLE_THRESHOLD
-		# robot.turn(ANGLE / 2)
-		# local_P = P / 10
-		# robot.turn(P * error)
-		# robot.turn(ANGLE / 2 - dist / 4)
-		# turn_rate = 7000 / dist
-		# turn_rate = 10000 / dist
-		# if turn_rate >= ANGLE * 5:
-		# 	turn_rate = ANGLE * 5
-		# robot.turn(turn_rate)
 		local_timer = StopWatch()
 		local_timer.reset()
-		while (local_timer.time() < 300):
-		# while (local_timer.time() < 6000 / dist):
-			robot.drive(STRAIGHT_SPEED / 1.5, TURN_RATE * 3)
+		while (local_timer.time() < 500):
+			robot.drive(90, TURN_RATE * 3)
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, 0)
 
 
@@ -162,19 +134,13 @@ def run():
 			robot.stop()
 			return
 		dist = ultrasonic_sensor.distance()
-		# Думаю, что это не нужно (что закомментировано). Для таких целей и существует PID регулятор. Просто необходимо грамотно и
-		# на основании многочисленных результатов измерений подобрать данные коэффициенты: P, I, D.
-
 		error = dist - OBSTACLE_THRESHOLD
-		if error > CORNER_ERROR_THRESHOLD: # Возможно в будущем поменять в меньшую сторону CORNER_ERROR_THRESHOLD
-			error = ERROR_THRESHOLD # Также здесь можно поиграться со значениями. Либо менять только коэффициент P на какое-то время
+		if error > CORNER_ERROR_THRESHOLD:
+			error = ERROR_THRESHOLD
 		elif error > ERROR_THRESHOLD:
 			error = ERROR_THRESHOLD
 		elif error < -ERROR_THRESHOLD:
 			error = -ERROR_THRESHOLD
-		# print("error")
-		# print(error)
-		# print("end_error")
 		turn_rate = P * error
 		robot.drive(STRAIGHT_SPEED, -turn_rate)
 		rotate_ultrasonic_sensor()
@@ -194,20 +160,3 @@ time.sleep(1)
 print("Потоки завершены")
 ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, ANGLE)
 ev3.speaker.beep()
-
-
-# while True:
-# 	robot.drive(STRAIGHT_SPEED, 30)
-# 	ultrasonic_motor.dc(20)
-# 	# ultrasonic_motor.run_target(TURN_RATE, ANGLE)
-# 	print("--------------------------------------------------------")
-# 	wait(10)
-
-# while True:
-# 	print(ultrasonic_sensor.distance())
-# 	wait(1000)
-
-# while True:
-# 	print(color_sensor.reflection() - REFLECTION_THRESHOLD)
-# 	# print(color_sensor.reflection())
-# 	wait(1000)
