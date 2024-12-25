@@ -10,8 +10,6 @@ from pybricks.media.ev3dev import SoundFile, ImageFile
 import _thread
 import time
 
-# ------------------------------------------------------- HW4
-
 ev3 = EV3Brick()
 
 left_motor = Motor(Port.A)
@@ -94,9 +92,6 @@ def drive_to_wall():
 				white_count += 1
 		else:
 			white_count = 0
-		print("drive_to_wall_error")
-		print(error)
-		print("end_drive_to_wall_error")
 		turn_rate = P * error
 		robot.drive(STRAIGHT_SPEED, turn_rate)
 
