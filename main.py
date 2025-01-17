@@ -13,12 +13,11 @@ import math
 
 # ------------------------------------------------------- HW5
 
-# 1. сделать правостороннюю систему координат
-# 2. сделать замеры в комнате у Рината
-# 3. менять местами x и y в функции is_on_line(position) в зависимости от их значений по отношению друг к другу
+# 1. сделать правостороннюю систему координат: done
+# 2. сделать замеры в комнате: done
+# 3. менять местами x и y в функции is_on_line(position) в зависимости от их значений по отношению друг к другу: done
 # 4. откалибровать значения констант
-# 5. настроить в vscode в терминале ползунок в процессе вывода
-# 6. привести код в порядок (сделать больше отдельных функций и пороговых констант): done
+# 5. привести код в порядок (сделать больше отдельных функций и пороговых констант): done
 
 ev3 = EV3Brick()
 
@@ -49,7 +48,7 @@ GOAL_DISTANCE_THRESHOLD = 5
 ON_LINE_THRESHOLD = 3
 
 START_POSITION = (0, 0)
-GOAL_POSITION = (200, 100) # x не должен быть равен 0!!!
+GOAL_POSITION = (300, 0) # x не должен быть равен 0!!!
 
 
 def go_back_ultrasonic_sensor():
@@ -79,17 +78,23 @@ def go_around_obstacle():
 
 
 def calc_distance_to_goal(position):
-    return math.sqrt((GOAL_POSITION[0] - position[0]) ** 2 + (GOAL_POSITION[1] - position[1]) ** 2)
+    return math.sqrt((position[0] - GOAL_POSITION[0]) ** 2 + (position[1] - GOAL_POSITION[1]) ** 2)
 
 
 def is_on_line(position):
-	y = K * position[0]
-	print("abs(y - position[1])", abs(y - position[1]))
-	return abs(y - position[1]) < ON_LINE_THRESHOLD
+	if GOAL_POSITION[1] <= GOAL_POSITION[0]:
+		x = position[0]
+		y = position[1]
+	else:
+		x = -1 * position[1]
+		y = position[0]
+	y_on_line = K * x
+	print("abs(y - y_on_line)", abs(y - y_on_line))
+	return abs(y - y_on_line) < ON_LINE_THRESHOLD
 
 
 def get_correct_orientation():
-	current_robot_angle = robot.angle()
+	current_robot_angle = -1 * robot.angle()
 	current_orientation = abs(current_robot_angle) % 360
 	if current_robot_angle < 0:
 		current_orientation *= -1
@@ -109,8 +114,10 @@ def run():
 	prev_robot_distance = robot.distance()
 	GOAL_ORIENTATION = math.acos(abs(START_POSITION[0] - GOAL_POSITION[0]) / calc_distance_to_goal(START_POSITION)) * 180 / 3.14 # degrees
 	K = (GOAL_POSITION[1] - START_POSITION[1]) / (GOAL_POSITION[0] - START_POSITION[0]) # GOAL_POSITION[0] не должен быть равен START_POSITION[0]
+	if GOAL_POSITION[1] > GOAL_POSITION[0]:
+		K = 1 / K
 
-	robot.turn(GOAL_ORIENTATION)
+	robot.turn(-1 * GOAL_ORIENTATION)
 	current_orientation = get_correct_orientation()
 	print("current_position[0]:", current_position[0])
 	print("current_position[1]:", current_position[1])
@@ -176,11 +183,11 @@ def run():
 			if is_on_line(current_position) and calc_distance_to_goal(current_position) < calc_distance_to_goal(hit_position):
 				print("обход препятствия завершен. Продолжаем движение к цели")
 				robot.stop()
-				print("robot.angle()", robot.angle())
+				print("-1 * robot.angle()", -1 * robot.angle())
 				print("robot.distance()", robot.distance())
 				# return
 				# вернуть робота в исходную ориентацию
-				robot.turn(GOAL_ORIENTATION - current_orientation)
+				robot.turn(current_orientation - GOAL_ORIENTATION)
 				current_orientation = get_correct_orientation()
 				print("current_position[0]:", current_position[0])
 				print("current_position[1]:", current_position[1])
