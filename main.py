@@ -13,45 +13,38 @@ import math
 
 # ------------------------------------------------------- HW5
 
-# 1. сделать правостороннюю систему координат: done
-# 2. сделать замеры в комнате: done
-# 3. менять местами x и y в функции is_on_line(position) в зависимости от их значений по отношению друг к другу: done
-# 4. откалибровать значения констант: in progress
-# 5. привести код в порядок (сделать больше отдельных функций и пороговых констант): done
-
 ev3 = EV3Brick()
 
 left_motor = Motor(Port.A)
 right_motor = Motor(Port.D)
 ultrasonic_motor = Motor(Port.C)
 
-WHEEL_DIAMETER = 54.5
-AXLE_TRACK = 114.3
+WHEEL_DIAMETER = 56
+AXLE_TRACK = 123
 
 robot = DriveBase(left_motor, right_motor, wheel_diameter=WHEEL_DIAMETER, axle_track=AXLE_TRACK)
 
-ultrasonic_sensor = UltrasonicSensor(Port.S4)
+ultrasonic_sensor = UltrasonicSensor(Port.S1)
+gyro_sensor = GyroSensor(Port.S2)
 
 P = 0.19
 
-STRAIGHT_SPEED = 50
+STRAIGHT_SPEED = 80
 TURN_RATE = 20
 ULTRASONIC_TURN_RATE = 800
 
 END_ANGLE = 90
 ULTRASONIC_END_ANGLE = 100
 
-OBSTACLE_THRESHOLD = 200
-FORWARD_OBSTACLE_THRESHOLD = 200
+OBSTACLE_THRESHOLD = 300
+FORWARD_OBSTACLE_THRESHOLD = 150
 ERROR_THRESHOLD = 70
 
-# GOAL_DISTANCE_THRESHOLD = 5
-GOAL_DISTANCE_THRESHOLD = 10
-# ON_LINE_THRESHOLD = 3
-ON_LINE_THRESHOLD = 10
+GOAL_DISTANCE_THRESHOLD = 8
+ON_LINE_THRESHOLD = 5
 
 START_POSITION = (0, 0)
-GOAL_POSITION = (300, 200) # x не должен быть равен 0!!!
+GOAL_POSITION = (40, 1) # x не должен быть равен 0!!!
 
 
 def go_back_ultrasonic_sensor():
@@ -85,7 +78,7 @@ def calc_distance_to_goal(position):
 
 
 def is_on_line(position):
-	if GOAL_POSITION[1] <= GOAL_POSITION[0]:
+	if abs(GOAL_POSITION[0]) >= abs(GOAL_POSITION[1]):
 		x = position[0]
 		y = position[1]
 	else:
@@ -97,7 +90,7 @@ def is_on_line(position):
 
 
 def get_correct_orientation():
-	current_robot_angle = -1 * robot.angle()
+	current_robot_angle = -1 * gyro_sensor.angle()
 	current_orientation = abs(current_robot_angle) % 360
 	if current_robot_angle < 0:
 		current_orientation *= -1
@@ -115,10 +108,13 @@ def run():
 	hit_position = None
 	current_position = list(START_POSITION)
 	prev_robot_distance = robot.distance()
-	GOAL_ORIENTATION = math.acos(abs(START_POSITION[0] - GOAL_POSITION[0]) / calc_distance_to_goal(START_POSITION)) * 180 / math.pi # degrees
-	K = (GOAL_POSITION[1] - START_POSITION[1]) / (GOAL_POSITION[0] - START_POSITION[0]) # GOAL_POSITION[0] не должен быть равен START_POSITION[0]
-	if GOAL_POSITION[1] > GOAL_POSITION[0]:
-		K = 1 / K
+	# GOAL_POSITION[0] не должен быть равен START_POSITION[0]
+	GOAL_ORIENTATION = math.atan2(GOAL_POSITION[1] - START_POSITION[1], GOAL_POSITION[0] - START_POSITION[0]) * 180 / math.pi # degrees
+	k = (GOAL_POSITION[1] - START_POSITION[1]) / (GOAL_POSITION[0] - START_POSITION[0])
+	if abs(GOAL_POSITION[0]) >= abs(GOAL_POSITION[1]):
+		K = k
+	else:
+		K = -1 / k
 
 	robot.turn(-1 * GOAL_ORIENTATION)
 	current_orientation = get_correct_orientation()
@@ -175,7 +171,7 @@ def run():
 			print("2. current_orientation:", current_orientation)
 
 			# условие 3 из лекции: невозможность достижения цели
-			if (departure_timer.time() > 1000) and (abs(current_position[0] - hit_position[0]) < 10 and abs(current_position[1] - hit_position[1]) < 10):
+			if (departure_timer.time() > 5000) and (abs(current_position[0] - hit_position[0]) < 10 and abs(current_position[1] - hit_position[1]) < 10):
 				print("невозможно достигнуть цели")
 				robot.stop()
 				# вернуть сонар в исходную ориентацию
@@ -183,10 +179,10 @@ def run():
 				return
 
 			# проверить, прошло ли достаточное кол-во времени, чтобы отъехать от линии для обхода препятствия. Также проверить, пересекаем ли прямую линию к цели и текущее расстояние до цели меньше расстояния до цели от точки последнего столкновения
-			if departure_timer.time() > 1000 and is_on_line(current_position) and calc_distance_to_goal(current_position) < calc_distance_to_goal(hit_position):
+			if departure_timer.time() > 5000 and is_on_line(current_position) and calc_distance_to_goal(current_position) < calc_distance_to_goal(hit_position):
 				print("обход препятствия завершен. Продолжаем движение к цели")
 				robot.stop()
-				print("-1 * robot.angle()", -1 * robot.angle())
+				print("-1 * gyro_sensor.angle()", -1 * gyro_sensor.angle())
 				print("robot.distance()", robot.distance())
 				# вернуть робота в исходную ориентацию
 				robot.turn(current_orientation - GOAL_ORIENTATION)
@@ -211,4 +207,5 @@ def run():
 
 ev3.speaker.beep()
 run()
+robot.straight(50)
 ev3.speaker.beep()
