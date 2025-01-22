@@ -11,8 +11,6 @@ import _thread
 import time
 import math
 
-# ------------------------------------------------------- HW5
-
 ev3 = EV3Brick()
 
 left_motor = Motor(Port.A)
