@@ -40,11 +40,11 @@ OBSTACLE_THRESHOLD = 300
 FORWARD_OBSTACLE_THRESHOLD = 150
 ERROR_THRESHOLD = 70
 
-GOAL_DISTANCE_THRESHOLD = 8
+GOAL_DISTANCE_THRESHOLD = 15
 ON_LINE_THRESHOLD = 5
 
 START_POSITION = (0, 0)
-GOAL_POSITION = (40, 1) # x не должен быть равен 0!!!
+GOAL_POSITION = (300, 180) # x не должен быть равен 0!!!
 
 
 def go_back_ultrasonic_sensor():
@@ -55,10 +55,8 @@ def go_back_ultrasonic_sensor():
 def rotate_ultrasonic_sensor():
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, ULTRASONIC_END_ANGLE)
 	if ultrasonic_sensor.distance() <= FORWARD_OBSTACLE_THRESHOLD:
-		local_timer = StopWatch()
-		local_timer.reset()
-		while (local_timer.time() < 500):
-			robot.drive(1.8 * STRAIGHT_SPEED, 3 * TURN_RATE)
+		robot.stop()
+		robot.turn(END_ANGLE)
 	ultrasonic_motor.run_target(ULTRASONIC_TURN_RATE, 0)
 
 
@@ -207,5 +205,5 @@ def run():
 
 ev3.speaker.beep()
 run()
-robot.straight(50)
+robot.straight(150)
 ev3.speaker.beep()
